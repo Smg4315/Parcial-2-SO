@@ -572,3 +572,5 @@ void rotarImagenConcurrente(ImagenInfo* info, float angulo) {
     
     printf("Imagen rotada %.2f grados con %d hilos (nueva dimensión: %dx%d).\n", 
            angulo, numHilos, anchoDestino, altoDestino);
+
+    }
