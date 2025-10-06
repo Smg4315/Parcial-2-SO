@@ -1,412 +1,119 @@
+<div align="center">
+  <h1>PARCIAL 2 - Organización De Computadores</h1>
+  <h1> 🖼️ Procesador de Imágenes con Hilos POSIX</h1>
+</div>
+
+Aplicación de procesamiento de imágenes desarrollada en C que utiliza hilos POSIX para operaciones paralelas y las librerías `stb_image`/`stb_image_write` para manejo de formatos de imagen.
+
+
+## 👥 Integrantes:
+- Andres Felipe Velez Alvarez
+- Samuel Samper Cardona
+- Sebastian Salazar Henao
+- Simon Mazo Gomez
+- Juan Simon Ospina Martinez
 
 ---
-# RETO 2
-# Reto 2: Extensión Concurrente de Procesamiento de Imágenes en C
 
-## Objetivo
-Basado en el código base proporcionado (un programa en C para procesamiento de imágenes PNG usando matrices 3D y concurrencia con pthreads), tu tarea es extender el programa para evaluar habilidades en concurrencia aplicada a operaciones de matrices en imágenes. Debes implementar nuevas funciones de procesamiento de imágenes que involucren operaciones matriciales complejas, asegurando que utilicen hilos POSIX (pthreads) para paralelizar el trabajo y mejorar el rendimiento. El enfoque principal es en la gestión eficiente de la concurrencia, el manejo de matrices y la robustez del código.
+## 🔧 Compilación y Ejecución
 
-El código base ya incluye carga/guardado de imágenes (grayscale o RGB), visualización de matrices y ajuste de brillo concurrente. Debes integrar las nuevas funciones al menú interactivo y mantener la estructura existente (usando la estructura `ImagenInfo` y las bibliotecas stb).
+Para compilar y ejecutar el proyecto (C con hilos POSIX y `stb_image`/`stb_image_write` ya incluidos), ubícate en la carpeta raíz (`Parcial-2-SO-main`) y compila con GCC enlazando hilos y la librería matemática:
 
-## Requisitos de Implementación
-1. **Mantener la Estructura Base**:
-   - No modifiques las funciones existentes (`cargarImagen`, `liberarImagen`, `mostrarMatriz`, `guardarPNG`, `ajustarBrilloConcurrente`, etc.) a menos que sea necesario para integración (por ejemplo, agregar opciones al menú).
-   - Asegúrate de que el programa compile con `gcc -o img img_base.c -pthread -lm` y se ejecute de manera similar.
-   - Maneja tanto imágenes en escala de grises (1 canal) como RGB (3 canales) en todas las nuevas funciones.
-   - Usa matrices 3D para los píxeles (`unsigned char*** pixeles`) y gestiona la memoria dinámicamente para evitar fugas.
+```bash
+gcc -o exe parcial2.c -pthread -lm
+```
 
-2. **Nuevas Funciones de Procesamiento de Imágenes**:
-   Debes declarar e implementar al menos **4 funciones nuevas** de tratamiento de imágenes, cada una utilizando concurrencia con pthreads (similar al ajuste de brillo). Cada función debe dividir el trabajo en hilos (mínimo 2, pero idealmente configurable o basado en el tamaño de la imagen). Las operaciones deben ser matriciales (es decir, involucrar accesos y modificaciones a la matriz de píxeles).
+Esto genera el binario `exe`.
 
-   - **Función 1: Convolución (e.g., Filtro de Desenfoque Gaussiano)**:
-     - QUÉ: Aplica un kernel de convolución (matriz 3x3 o 5x5) a cada píxel para suavizar la imagen (blurring).
-     - CÓMO: Para cada píxel, multiplica los valores vecinos por el kernel, suma y normaliza. Usa hilos para procesar rangos de filas en paralelo. Maneja bordes con padding (e.g., replicar píxeles de borde).
-     - POR QUÉ: Evalúa operaciones matriciales locales y concurrencia en accesos a memoria compartida.
-     - Parámetros: `ImagenInfo* info`, `int tamKernel` (tamaño del kernel, e.g., 3), `float sigma` (para generar kernel Gaussiano usando fórmula matemática).
-     - Concurrencia: Divide las filas entre hilos, sincronizando con `pthread_join`.
+### 🚀 Formas de Ejecución
 
-   - **Función 2: Rotación de Imagen**:
-     - QUÉ: Rota la imagen en un ángulo dado (e.g., 90°, 180°, 270° o arbitrario).
-     - CÓMO: Calcula nuevas coordenadas usando matrices de transformación (e.g., x' = x*cosθ - y*sinθ, y' = x*sinθ + y*cosθ). Usa interpolación bilineal para píxeles no enteros. Crea una nueva matriz para la imagen rotada y libera la antigua.
-     - POR QUÉ: Involucra transformaciones geométricas matriciales y manejo de dimensiones cambiantes.
-     - Parámetros: `ImagenInfo* info`, `float angulo` (en grados).
-     - Concurrencia: Paraleliza el cálculo de píxeles en la nueva matriz dividiendo por filas o bloques.
+La ejecución puede hacerse de dos formas:
 
-   - **Función 3: Detección de Bordes (e.g., Operador Sobel)**:
-     - QUÉ: Aplica convolución con kernels Sobel para detectar bordes (gradiente horizontal y vertical).
-     - CÓMO: Calcula magnitud del gradiente (sqrt(Gx² + Gy²)) y clamp a 0-255. Convierte a grayscale si es RGB (promedio de canales).
-     - POR QUÉ: Combina convolución con operaciones vectoriales, evaluando concurrencia en cómputos intensivos.
-     - Parámetros: `ImagenInfo* info`.
-     - Concurrencia: Hilos procesan rangos de filas, compartiendo la matriz original (lectura) y escribiendo en una nueva.
+- **📂 (a) Con argumento**: Pasando la imagen de entrada como argumento para que el programa la cargue de inmediato:
+  ```bash
+  ./exe imagen.jpg
+  ```
 
-   - **Función 4: Escalado de Imagen (Resize)**:
-     - QUÉ: Redimensiona la imagen a un nuevo tamaño (e.g., bilinear interpolation).
-     - CÓMO: Calcula factores de escala, interpola valores de píxeles desde la matriz original a una nueva.
-     - POR QUÉ: Involucra accesos no secuenciales a la matriz y gestión de memoria para nueva imagen.
-     - Parámetros: `ImagenInfo* info`, `int nuevoAncho`, `int nuevoAlto`.
-     - Concurrencia: Paraleliza por filas de la nueva imagen.
+- **🖱️ (b) Modo interactivo**: Lanzando `./exe` sin argumentos y usando el menú interactivo para **Cargar imagen** (opción 1):
+  ```bash
+  ./exe
+  ```
 
-   - **Integración al Menú**:
-     Agrega opciones al menú interactivo (e.g., 5. Aplicar convolución, 6. Rotar imagen, etc.). Solicita parámetros del usuario cuando sea necesario (e.g., ángulo para rotación).
+### 📁 Formatos Soportados
 
-3. **Requisitos de Concurrencia**:
-   - Usa al menos 2-4 hilos por función, dividiendo el trabajo por filas o bloques para evitar race conditions (la matriz es compartida en lectura/escritura).
-   - Incluye estructuras como `BrilloArgs` para pasar datos a hilos.
-   - Maneja errores en `pthread_create` y `pthread_join`.
-   - Opcional: Haz el número de hilos configurable (e.g., vía entrada del usuario) para demostrar escalabilidad.
+El programa soporta formatos comunes: **PNG** 🖼️ | **JPG** 📷 | **BMP** 🎨 | **TGA** 🎭
 
-4. **Consideraciones Generales**:
-   - Maneja errores (e.g., memoria insuficiente, imágenes no cargadas).
-   - Asegura que las funciones trabajen con ambos formatos (grayscale/RGB).
-   - Usa `<math.h>` para cálculos (e.g., sin, cos, sqrt).
-   - No agregues dependencias externas más allá de stb y pthreads.
+Muestra información básica y una vista parcial de la matriz, y permite aplicar diversas operaciones de procesamiento de imágenes.
 
-## Codigo base:
-```c
-// Programa de procesamiento de imágenes en C para principiantes en Linux.
-// QUÉ: Procesa imágenes PNG (escala de grises o RGB) usando matrices, con soporte
-// para carga, visualización, guardado y ajuste de brillo concurrente.
-// CÓMO: Usa stb_image.h para cargar PNG y stb_image_write.h para guardar PNG,
-// con hilos POSIX (pthread) para el procesamiento paralelo del brillo.
-// POR QUÉ: Diseñado para enseñar manejo de matrices, concurrencia y gestión de
-// memoria en C, manteniendo simplicidad y robustez para principiantes.
-// Dependencias: Descarga stb_image.h y stb_image_write.h desde
-// https://github.com/nothings/stb
-//   wget https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-//   wget https://raw.githubusercontent.com/nothings/stb/master/stb_image_write.h
-//
-// Compilar: gcc -o img img_base.c -pthread -lm
-// Ejecutar: ./img [ruta_imagen.png]
+### 💾 Guardar Cambios
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <string.h>
-#include <math.h>
+Cuando quieras persistir los cambios, usa **Guardar imagen (PNG)** (opción 3), ingresando el nombre de salida:
+```
+resultado.png
+```
 
-// QUÉ: Incluir bibliotecas stb para cargar y guardar imágenes PNG.
-// CÓMO: stb_image.h lee PNG/JPG a memoria; stb_image_write.h escribe PNG.
-// POR QUÉ: Son bibliotecas de un solo archivo, simples y sin dependencias externas.
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+## ⚙️ Requisitos
 
-// QUÉ: Estructura para almacenar la imagen (ancho, alto, canales, píxeles).
-// CÓMO: Usa matriz 3D para píxeles (alto x ancho x canales), donde canales es
-// 1 (grises) o 3 (RGB). Píxeles son unsigned char (0-255).
-// POR QUÉ: Permite manejar tanto grises como color, con memoria dinámica para
-// flexibilidad y evitar desperdicio.
-typedef struct {
-    int ancho;           // Ancho de la imagen en píxeles
-    int alto;            // Alto de la imagen en píxeles
-    int canales;         // 1 (escala de grises) o 3 (RGB)
-    unsigned char*** pixeles; // Matriz 3D: [alto][ancho][canales]
-} ImagenInfo;
+- ✅ Tener `gcc` disponible (Linux/macOS; en Windows usar MinGW o WSL)
+- ✅ Compilar desde el mismo directorio donde están `parcial2.c`, `stb_image.h` y `stb_image_write.h` para que las inclusiones se resuelvan correctamente
 
-// QUÉ: Liberar memoria asignada para la imagen.
-// CÓMO: Libera cada fila y canal de la matriz 3D, luego el arreglo de filas y
-// reinicia la estructura.
-// POR QUÉ: Evita fugas de memoria, esencial en C para manejar recursos manualmente.
-void liberarImagen(ImagenInfo* info) {
-    if (info->pixeles) {
-        for (int y = 0; y < info->alto; y++) {
-            for (int x = 0; x < info->ancho; x++) {
-                free(info->pixeles[y][x]); // Liberar canales por píxel
-            }
-            free(info->pixeles[y]); // Liberar fila
-        }
-        free(info->pixeles); // Liberar arreglo de filas
-        info->pixeles = NULL;
-    }
-    info->ancho = 0;
-    info->alto = 0;
-    info->canales = 0;
-}
+---
 
-// QUÉ: Cargar una imagen PNG desde un archivo.
-// CÓMO: Usa stbi_load para leer el archivo, detecta canales (1 o 3), y convierte
-// los datos a una matriz 3D (alto x ancho x canales).
-// POR QUÉ: La matriz 3D es intuitiva para principiantes y permite procesar
-// píxeles y canales individualmente.
-int cargarImagen(const char* ruta, ImagenInfo* info) {
-    int canales;
-    // QUÉ: Cargar imagen con formato original (0 canales = usar formato nativo).
-    // CÓMO: stbi_load lee el archivo y llena ancho, alto y canales.
-    // POR QUÉ: Respetar el formato original asegura que grises o RGB se mantengan.
-    unsigned char* datos = stbi_load(ruta, &info->ancho, &info->alto, &canales, 0);
-    if (!datos) {
-        fprintf(stderr, "Error al cargar imagen: %s\n", ruta);
-        return 0;
-    }
-    info->canales = (canales == 1 || canales == 3) ? canales : 1; // Forzar 1 o 3
+## ✨ Funcionalidades
 
-    // QUÉ: Asignar memoria para matriz 3D.
-    // CÓMO: Asignar alto filas, luego ancho columnas por fila, luego canales por píxel.
-    // POR QUÉ: Estructura clara y flexible para grises (1 canal) o RGB (3 canales).
-    info->pixeles = (unsigned char***)malloc(info->alto * sizeof(unsigned char**));
-    if (!info->pixeles) {
-        fprintf(stderr, "Error de memoria al asignar filas\n");
-        stbi_image_free(datos);
-        return 0;
-    }
-    for (int y = 0; y < info->alto; y++) {
-        info->pixeles[y] = (unsigned char**)malloc(info->ancho * sizeof(unsigned char*));
-        if (!info->pixeles[y]) {
-            fprintf(stderr, "Error de memoria al asignar columnas\n");
-            liberarImagen(info);
-            stbi_image_free(datos);
-            return 0;
-        }
-        for (int x = 0; x < info->ancho; x++) {
-            info->pixeles[y][x] = (unsigned char*)malloc(info->canales * sizeof(unsigned char));
-            if (!info->pixeles[y][x]) {
-                fprintf(stderr, "Error de memoria al asignar canales\n");
-                liberarImagen(info);
-                stbi_image_free(datos);
-                return 0;
-            }
-            // Copiar píxeles a matriz 3D
-            for (int c = 0; c < info->canales; c++) {
-                info->pixeles[y][x][c] = datos[(y * info->ancho + x) * info->canales + c];
-            }
-        }
-    }
+### 🔹 1. Cargar imagen 📥
+Permite al usuario seleccionar una imagen (en formatos como JPG, PNG, BMP o TGA) y cargarla en memoria. El programa utiliza la librería `stb_image.h` para decodificar los píxeles y almacenarlos en una matriz bidimensional que servirá de base para los posteriores procesamientos.
 
-    stbi_image_free(datos); // Liberar buffer de stb
-    printf("Imagen cargada: %dx%d, %d canales (%s)\n", info->ancho, info->alto,
-           info->canales, info->canales == 1 ? "grises" : "RGB");
-    return 1;
-}
+### 🔹 2. Mostrar información ℹ️
+Despliega datos esenciales de la imagen cargada: nombre, dimensiones (ancho y alto), cantidad de canales de color y tamaño total en bytes. Esto ayuda a verificar que la carga se haya realizado correctamente antes de aplicar transformaciones.
 
-// QUÉ: Mostrar la matriz de píxeles (primeras 10 filas).
-// CÓMO: Imprime los valores de los píxeles, agrupando canales por píxel (grises o RGB).
-// POR QUÉ: Ayuda a visualizar la matriz para entender la estructura de datos.
-void mostrarMatriz(const ImagenInfo* info) {
-    if (!info->pixeles) {
-        printf("No hay imagen cargada.\n");
-        return;
-    }
-    printf("Matriz de la imagen (primeras 10 filas):\n");
-    for (int y = 0; y < info->alto && y < 10; y++) {
-        for (int x = 0; x < info->ancho; x++) {
-            if (info->canales == 1) {
-                printf("%3u ", info->pixeles[y][x][0]); // Escala de grises
-            } else {
-                printf("(%3u,%3u,%3u) ", info->pixeles[y][x][0], info->pixeles[y][x][1],
-                       info->pixeles[y][x][2]); // RGB
-            }
-        }
-        printf("\n");
-    }
-    if (info->alto > 10) {
-        printf("... (más filas)\n");
-    }
-}
+### 🔹 3. Mostrar matriz 🔢
+Imprime en pantalla una parte representativa de la matriz de píxeles (no toda, para evitar saturar la terminal). Esta vista parcial permite observar cómo están organizados los valores RGB que conforman la imagen original.
 
-// QUÉ: Guardar la matriz como PNG (grises o RGB).
-// CÓMO: Aplana la matriz 3D a 1D y usa stbi_write_png con el número de canales correcto.
-// POR QUÉ: Respeta el formato original (grises o RGB) para consistencia.
-int guardarPNG(const ImagenInfo* info, const char* rutaSalida) {
-    if (!info->pixeles) {
-        fprintf(stderr, "No hay imagen para guardar.\n");
-        return 0;
-    }
+### 🔹 4. Aplicar filtro de brillo ☀️
+Incrementa o disminuye el valor de brillo de cada píxel. Se realiza multiplicando los valores RGB por un factor definido por el usuario, logrando imágenes más claras o más oscuras sin alterar la estructura de color.
 
-    // QUÉ: Aplanar matriz 3D a 1D para stb.
-    // CÓMO: Copia píxeles en orden [y][x][c] a un arreglo plano.
-    // POR QUÉ: stb_write_png requiere datos contiguos.
-    unsigned char* datos1D = (unsigned char*)malloc(info->ancho * info->alto * info->canales);
-    if (!datos1D) {
-        fprintf(stderr, "Error de memoria al aplanar imagen\n");
-        return 0;
-    }
-    for (int y = 0; y < info->alto; y++) {
-        for (int x = 0; x < info->ancho; x++) {
-            for (int c = 0; c < info->canales; c++) {
-                datos1D[(y * info->ancho + x) * info->canales + c] = info->pixeles[y][x][c];
-            }
-        }
-    }
+### 🔹 5. Aplicar filtro de desenfoque (blur) 🌫️
+Implementa un desenfoque básico o gaussiano usando el promedio de píxeles vecinos. Este proceso suaviza los bordes y reduce el ruido visual, generando una apariencia más difusa en la imagen.
 
-    // QUÉ: Guardar como PNG.
-    // CÓMO: Usa stbi_write_png con los canales de la imagen original.
-    // POR QUÉ: Mantiene el formato (grises o RGB) de la entrada.
-    int resultado = stbi_write_png(rutaSalida, info->ancho, info->alto, info->canales,
-                                   datos1D, info->ancho * info->canales);
-    free(datos1D);
-    if (resultado) {
-        printf("Imagen guardada en: %s (%s)\n", rutaSalida,
-               info->canales == 1 ? "grises" : "RGB");
-        return 1;
-    } else {
-        fprintf(stderr, "Error al guardar PNG: %s\n", rutaSalida);
-        return 0;
-    }
-}
+### 🔹 6. Aplicar filtro Sobel 🔍
+Ejecuta la detección de bordes mediante el operador Sobel, calculando gradientes horizontales y verticales. El resultado resalta contornos y transiciones fuertes entre áreas de diferente intensidad, ideal para análisis de formas.
 
-// QUÉ: Estructura para pasar datos al hilo de ajuste de brillo.
-// CÓMO: Contiene matriz, rango de filas, ancho, canales y delta de brillo.
-// POR QUÉ: Los hilos necesitan datos específicos para procesar en paralelo.
-typedef struct {
-    unsigned char*** pixeles;
-    int inicio;
-    int fin;
-    int ancho;
-    int canales;
-    int delta;
-} BrilloArgs;
+### 🔹 7. Rotar imagen 🔄
+Permite rotar la imagen 90°, 180° o 270°, reorganizando la matriz de píxeles según la orientación elegida. Se utilizan cálculos de coordenadas para reasignar correctamente las posiciones.
 
-// QUÉ: Ajustar brillo en un rango de filas (para hilos).
-// CÓMO: Suma delta a cada canal de cada píxel, con clamp entre 0-255.
-// POR QUÉ: Procesa píxeles en paralelo para demostrar concurrencia.
-void* ajustarBrilloHilo(void* args) {
-    BrilloArgs* bArgs = (BrilloArgs*)args;
-    for (int y = bArgs->inicio; y < bArgs->fin; y++) {
-        for (int x = 0; x < bArgs->ancho; x++) {
-            for (int c = 0; c < bArgs->canales; c++) {
-                int nuevoValor = bArgs->pixeles[y][x][c] + bArgs->delta;
-                bArgs->pixeles[y][x][c] = (unsigned char)(nuevoValor < 0 ? 0 :
-                                                          (nuevoValor > 255 ? 255 : nuevoValor));
-            }
-        }
-    }
-    return NULL;
-}
+### 🔹 8. Redimensionar imagen 📐
+Modifica las dimensiones de la imagen (ancho y alto) usando interpolación simple, adaptando la cantidad de píxeles para obtener versiones más pequeñas o más grandes, sin perder la proporción visual.
 
-// QUÉ: Ajustar brillo de la imagen usando múltiples hilos.
-// CÓMO: Divide las filas entre 2 hilos, pasa argumentos y espera con join.
-// POR QUÉ: Usa concurrencia para acelerar el procesamiento y enseñar hilos.
-void ajustarBrilloConcurrente(ImagenInfo* info, int delta) {
-    if (!info->pixeles) {
-        printf("No hay imagen cargada.\n");
-        return;
-    }
+### 🔹 9. Guardar imagen 💾
+Guarda el resultado de las transformaciones aplicadas en un nuevo archivo, utilizando `stb_image_write.h`. El usuario elige el nombre de salida y el formato (generalmente `.png`), preservando así las modificaciones realizadas.
 
-    const int numHilos = 2; // QUÉ: Número fijo de hilos para simplicidad.
-    pthread_t hilos[numHilos];
-    BrilloArgs args[numHilos];
-    int filasPorHilo = (int)ceil((double)info->alto / numHilos);
+---
 
-    // QUÉ: Configurar y lanzar hilos.
-    // CÓMO: Asigna rangos de filas a cada hilo y pasa datos.
-    // POR QUÉ: Divide el trabajo para procesar en paralelo.
-    for (int i = 0; i < numHilos; i++) {
-        args[i].pixeles = info->pixeles;
-        args[i].inicio = i * filasPorHilo;
-        args[i].fin = (i + 1) * filasPorHilo < info->alto ? (i + 1) * filasPorHilo : info->alto;
-        args[i].ancho = info->ancho;
-        args[i].canales = info->canales;
-        args[i].delta = delta;
-        if (pthread_create(&hilos[i], NULL, ajustarBrilloHilo, &args[i]) != 0) {
-            fprintf(stderr, "Error al crear hilo %d\n", i);
-            return;
-        }
-    }
+## 📝 Ejemplo de Uso
 
-    // QUÉ: Esperar a que los hilos terminen.
-    // CÓMO: Usa pthread_join para sincronizar.
-    // POR QUÉ: Garantiza que todos los píxeles se procesen antes de continuar.
-    for (int i = 0; i < numHilos; i++) {
-        pthread_join(hilos[i], NULL);
-    }
-    printf("Brillo ajustado concurrentemente con %d hilos (%s).\n", numHilos,
-           info->canales == 1 ? "grises" : "RGB");
-}
+```bash
+# Compilar el proyecto
+gcc -o exe parcial2.c -pthread -lm
 
-// QUÉ: Mostrar el menú interactivo.
-// CÓMO: Imprime opciones y espera entrada del usuario.
-// POR QUÉ: Proporciona una interfaz simple para interactuar con el programa.
-void mostrarMenu() {
-    printf("\n--- Plataforma de Edición de Imágenes ---\n");
-    printf("1. Cargar imagen PNG\n");
-    printf("2. Mostrar matriz de píxeles\n");
-    printf("3. Guardar como PNG\n");
-    printf("4. Ajustar brillo (+/- valor) concurrentemente\n");
-    printf("5. Salir\n");
-    printf("Opción: ");
-}
+# Ejecutar con imagen de entrada
+./exe mi_imagen.jpg
 
-// QUÉ: Función principal que controla el flujo del programa.
-// CÓMO: Maneja entrada CLI, ejecuta el menú en bucle y llama funciones según opción.
-// POR QUÉ: Centraliza la lógica y asegura limpieza al salir.
-int main(int argc, char* argv[]) {
-    ImagenInfo imagen = {0, 0, 0, NULL}; // Inicializar estructura
-    char ruta[256] = {0}; // Buffer para ruta de archivo
+# O ejecutar en modo interactivo
+./exe
+```
 
-    // QUÉ: Cargar imagen desde CLI si se pasa.
-    // CÓMO: Copia argv[1] y llama cargarImagen.
-    // POR QUÉ: Permite ejecución directa con ./img imagen.png.
-    if (argc > 1) {
-        strncpy(ruta, argv[1], sizeof(ruta) - 1);
-        if (!cargarImagen(ruta, &imagen)) {
-            return EXIT_FAILURE;
-        }
-    }
+---
 
-    int opcion;
-    while (1) {
-        mostrarMenu();
-        // QUÉ: Leer opción del usuario.
-        // CÓMO: Usa scanf y limpia el buffer para evitar bucles infinitos.
-        // POR QUÉ: Manejo robusto de entrada evita errores comunes.
-        if (scanf("%d", &opcion) != 1) {
-            while (getchar() != '\n');
-            printf("Entrada inválida.\n");
-            continue;
-        }
-        while (getchar() != '\n'); // Limpiar buffer
+## 👨‍💻 Tecnologías Utilizadas
 
-        switch (opcion) {
-            case 1: { // Cargar imagen
-                printf("Ingresa la ruta del archivo PNG: ");
-                if (fgets(ruta, sizeof(ruta), stdin) == NULL) {
-                    printf("Error al leer ruta.\n");
-                    continue;
-                }
-                ruta[strcspn(ruta, "\n")] = 0; // Eliminar salto de línea
-                liberarImagen(&imagen); // Liberar imagen previa
-                if (!cargarImagen(ruta, &imagen)) {
-                    continue;
-                }
-                break;
-            }
-            case 2: // Mostrar matriz
-                mostrarMatriz(&imagen);
-                break;
-            case 3: { // Guardar PNG
-                char salida[256];
-                printf("Nombre del archivo PNG de salida: ");
-                if (fgets(salida, sizeof(salida), stdin) == NULL) {
-                    printf("Error al leer ruta.\n");
-                    continue;
-                }
-                salida[strcspn(salida, "\n")] = 0;
-                guardarPNG(&imagen, salida);
-                break;
-            }
-            case 4: { // Ajustar brillo
-                int delta;
-                printf("Valor de ajuste de brillo (+ para más claro, - para más oscuro): ");
-                if (scanf("%d", &delta) != 1) {
-                    while (getchar() != '\n');
-                    printf("Entrada inválida.\n");
-                    continue;
-                }
-                while (getchar() != '\n');
-                ajustarBrilloConcurrente(&imagen, delta);
-                break;
-            }
-            case 5: // Salir
-                liberarImagen(&imagen);
-                printf("¡Adiós!\n");
-                return EXIT_SUCCESS;
-            default:
-                printf("Opción inválida.\n");
-        }
-    }
-    liberarImagen(&imagen);
-    return EXIT_SUCCESS;
-}
+- **Lenguaje**: C
+- **Concurrencia**: Hilos POSIX (`pthread`)
+- **Librerías**: 
+  - `stb_image.h` - Carga de imágenes
+  - `stb_image_write.h` - Guardado de imágenes
+  - `math.h` - Operaciones matemáticas
+ 
+## 📽️ Link del video
 
-
+- www.youtube.com/watch?v=eLQFdhWOG8U&feature=youtu.be
