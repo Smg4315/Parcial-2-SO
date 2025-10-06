@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>PARCIAL 2 - Organización De Computadores</h1>
+  <h1>PARCIAL 2 - Sistemas Operativos </h1>
   <h1> 🖼️ Procesador de Imágenes con Hilos POSIX</h1>
 </div>
 
